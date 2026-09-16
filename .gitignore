@@ -13,3 +13,7 @@ run/
 # Logs / OS noise
 *.log
 .DS_Store
+libs/
+gradlew
+gradlew.bat
+gradle/wrapper/
