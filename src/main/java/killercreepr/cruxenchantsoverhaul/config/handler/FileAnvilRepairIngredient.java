@@ -4,7 +4,6 @@ import killercreepr.crux.api.component.parser.hybrid.PersistTextParser;
 import killercreepr.crux.api.item.predicate.ItemPredicate;
 import killercreepr.crux.api.valueproviders.number.NumberProvider;
 import killercreepr.crux.core.component.parser.TextDataComponentDecoder;
-import killercreepr.cruxcharms.core.component.charm.CharmCompParsers;
 import killercreepr.cruxconfig.config.common.FileContext;
 import killercreepr.cruxconfig.config.common.FileRegistry;
 import killercreepr.cruxconfig.config.common.element.FileElement;
@@ -51,10 +50,7 @@ public class FileAnvilRepairIngredient implements FileObjectHandler<AnvilIngredi
                         o.get("tickable_modifiers").getAsString()
                     ));
 
-                return new EntityTickableApplyAnvilIngredient(ingredient, repairAmount, modifiers,
-                    CharmCompParsers.CHARM_LIST.attemptDecodeObject(
-                        TextDataComponentDecoder.parseObject(o.get("charms").getAsString())
-                    ));
+                return new EntityTickableApplyAnvilIngredient(ingredient, repairAmount, modifiers);
             }
         }
         return null;

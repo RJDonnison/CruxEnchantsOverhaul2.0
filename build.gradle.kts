@@ -14,20 +14,6 @@ dependencies {
     paperweight.paperDevBundle(libs.versions.paper)
     //implementation("com.ezylang:EvalEx:3.2.0")
     //Crux Modules
-    compileOnly(files(
-        "E:\\Plugins\\YO\\CruxCore\\build\\libs\\CruxCore-1.0-all.jar",
-        "E:\\Plugins\\YO\\CruxCharms\\build\\libs\\CruxCharms-1.0-all.jar"
-        /*"E:\\Plugins\\Crux2.0\\crux\\CruxMain\\build\\libs\\CruxMain-1.0.jar",
-        "E:\\Plugins\\Crux2.0\\crux\\CruxMenus\\build\\libs\\CruxMenus-1.0-dev.jar",
-        "E:\\Plugins\\Crux2.0\\crux\\CruxPotions\\build\\libs\\CruxPotions-1.0-dev.jar",
-        "E:\\Plugins\\Crux2.0\\crux\\CruxConfigs\\build\\libs\\CruxConfigs-1.0-dev.jar",
-        "E:\\Plugins\\Crux2.0\\crux\\CruxEntities\\build\\libs\\CruxEntities-1.0-dev.jar",
-        "E:\\Plugins\\Crux2.0\\crux\\CruxAttributes\\build\\libs\\CruxAttributes-1.0-dev.jar",
-        "E:\\Plugins\\Crux2.0\\crux\\CruxEnchants\\build\\libs\\CruxEnchants-1.0-dev.jar",
-        "E:\\Plugins\\Crux2.0\\crux\\CruxItems\\build\\libs\\CruxItems-1.0-dev.jar",
-        "E:\\Plugins\\Crux2.0\\crux\\CruxBlocks\\build\\libs\\CruxBlocks-1.0-dev.jar",*/
-    ))
-
     compileOnly(fileTree("libs") {
         include("*.jar")
     })
@@ -35,7 +21,7 @@ dependencies {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
+        languageVersion.set(JavaLanguageVersion.of(26))
     }
 }
 
@@ -50,6 +36,7 @@ allprojects{
 
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
+        options.release.set(25)
     }
 
     tasks.withType<Test> {
@@ -59,4 +46,9 @@ allprojects{
     tasks.withType<Javadoc>{
         options.encoding = "UTF-8"
     }
+}
+
+tasks.runServer {
+    minecraftVersion("26.2")
+    pluginJars(files("libs/CruxCore.jar"))
 }

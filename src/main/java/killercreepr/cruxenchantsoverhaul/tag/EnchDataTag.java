@@ -11,13 +11,10 @@ import killercreepr.crux.core.text.resolver.Tag;
 import killercreepr.crux.core.util.CruxString;
 import killercreepr.cruxenchants.api.enchant.CruxEnchant;
 import killercreepr.cruxenchants.core.registries.CruxEnchantRegistries;
-import killercreepr.cruxenchantsoverhaul.CruxEnchantsOverhaul;
 import net.kyori.adventure.key.Key;
 import org.bukkit.enchantments.Enchantment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Map;
 
 public class EnchDataTag implements ObjectTag<EnchDataTag.Data> {
     public static class Data{
@@ -37,11 +34,6 @@ public class EnchDataTag implements ObjectTag<EnchDataTag.Data> {
             if(ee == null) return CruxString.toTitleCase(enchant.value());
             return ee.displayName();
         }
-
-        public int enchantUsage(){
-            return CruxEnchantsOverhaul.inst().values().MAGIC_CAPACITY_USAGE_PER_LEVEL().valueOr(Map.of())
-                .getOrDefault(enchant, 1);
-        }
     }
 
     @Override
@@ -59,9 +51,6 @@ public class EnchDataTag implements ObjectTag<EnchDataTag.Data> {
     public @Nullable TagContainer<StringResolver> requestStrings(@NotNull Data object, @NotNull TagParser tags) {
         return TagContainer.string(tags)
             .add(Tag.string("name", (args, ctx) -> object.name()))
-            .add(Tag.string("enchant_usage", (args, ctx) ->{
-                return object.enchantUsage() + "";
-            }))
             ;
     }
 }

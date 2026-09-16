@@ -3,10 +3,6 @@ package killercreepr.cruxenchantsoverhaul.anvil.recipe;
 import killercreepr.crux.api.item.CruxItem;
 import killercreepr.crux.api.item.predicate.ItemPredicate;
 import killercreepr.crux.api.valueproviders.number.NumberProvider;
-import killercreepr.cruxcharms.api.charm.Charm;
-import killercreepr.cruxcharms.api.charm.CharmData;
-import killercreepr.cruxcharms.core.component.CharmComponents;
-import killercreepr.cruxcharms.core.component.charm.SimpleCharmData;
 import killercreepr.cruxtickables.api.entity.tickable.EntityTickableModifier;
 import killercreepr.cruxtickables.api.entity.tickable.EntityTickablesContainer;
 import killercreepr.cruxtickables.core.component.CruxTickableComponents;
@@ -15,16 +11,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 public class EntityTickableApplyAnvilIngredient extends SimpleAnvilIngredient {
     protected final Collection<EntityTickableModifier> modifiers;
-    protected final List<Charm> charms;
-    public EntityTickableApplyAnvilIngredient(@NotNull ItemPredicate ingredient, @NotNull NumberProvider repairAmount, Collection<EntityTickableModifier> modifiers, List<Charm> charms) {
+    public EntityTickableApplyAnvilIngredient(@NotNull ItemPredicate ingredient, @NotNull NumberProvider repairAmount, Collection<EntityTickableModifier> modifiers) {
         super(ingredient, repairAmount);
         this.modifiers = modifiers;
-        this.charms = charms;
     }
 
     public boolean hasAnyModifiers(Collection<EntityTickableModifier> container){
@@ -53,11 +46,6 @@ public class EntityTickableApplyAnvilIngredient extends SimpleAnvilIngredient {
 
         result.set(CruxTickableComponents.ENTITY_TICKABLES, EntityTickablesContainer.container(modifiers));
 
-        CharmData charmData = result.getOrDefaultData(CharmComponents.CHARM_DATA);
-        if(charmData == null){
-            charmData = new SimpleCharmData(new ArrayList<>(), CharmData.INFINITE_SLOTS);
-        }
-        result.set(CharmComponents.CHARM_DATA, charmData.addCharm(charms.toArray(new Charm[0])));
         return super.applyToResult(result);
     }
 }
