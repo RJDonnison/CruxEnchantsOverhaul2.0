@@ -10,6 +10,7 @@ import killercreepr.crux.core.math.BlockPos;
 import killercreepr.cruxblocks.api.block.CruxBlock;
 import killercreepr.cruxblocks.api.block.active.ActiveCruxInteractable;
 import killercreepr.cruxblocks.api.block.context.BlockContext;
+import killercreepr.cruxblocks.api.mining.user.Miner;
 import killercreepr.cruxblocks.core.block.active.SimpleActiveCruxBlock;
 import killercreepr.cruxblocks.core.block.data.CustomBlockData;
 import killercreepr.cruxcore.CruxCore;
@@ -19,6 +20,7 @@ import killercreepr.cruxenchantsoverhaul.enchanting.BlockGrid;
 import killercreepr.cruxenchantsoverhaul.enchanting.EnchantData;
 import killercreepr.cruxenchantsoverhaul.menu.enchanting.EnchantingMenu;
 import killercreepr.cruxmenus.core.registries.Menus;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.ChiseledBookshelf;
 import org.bukkit.enchantments.Enchantment;
@@ -149,6 +151,11 @@ public class EnchantTableBlock extends SimpleActiveCruxBlock implements ManagedT
             //todo maybe set the item drop owner to the player so other
             // players can't pick it up?
         });*/
+    }
+
+    @Override
+    public @NotNull Collection<ItemStack> getDrops(@NotNull Miner miner) {
+        return List.of(new ItemStack(Material.ENCHANTING_TABLE));
     }
 
     @NotNull
