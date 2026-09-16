@@ -8,5 +8,3 @@ dependencies:
       load: BEFORE
       required: true # Defaults to true
       join-classpath: true # Defaults to true
-    CruxCharms:
-      required: false

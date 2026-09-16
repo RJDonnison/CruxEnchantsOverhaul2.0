@@ -13,14 +13,11 @@ import killercreepr.crux.core.text.resolver.Tag;
 import killercreepr.crux.core.util.*;
 import killercreepr.cruxcrafting.api.crafting.context.CruxIngredientContext;
 import killercreepr.cruxcrafting.api.crafting.ingredient.CruxRecipeIngredient;
-import killercreepr.cruxenchantsoverhaul.CruxEnchantsOverhaul;
 import killercreepr.cruxenchantsoverhaul.api.enchant.EEnchant;
 import killercreepr.cruxenchantsoverhaul.block.active.EnchantTableBlock;
-import killercreepr.cruxenchantsoverhaul.component.EnchantComponents;
 import killercreepr.cruxenchantsoverhaul.enchanting.EnchantData;
 import killercreepr.cruxenchantsoverhaul.enchanting.EnchantRequirements;
 import killercreepr.cruxenchantsoverhaul.enchanting.Enchanter;
-import killercreepr.cruxenchantsoverhaul.item.EEItem;
 import killercreepr.cruxenchantsoverhaul.item.EItems;
 import killercreepr.cruxenchantsoverhaul.registries.EnchantsRegistries;
 import killercreepr.cruxmenus.api.menu.container.MenuContainer;
@@ -143,6 +140,28 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
                 if(selectedEnchant == null && bookEnchants == null) return;
                 if(enchantRequirements == null) return;
                 if(INPUT.isBlank(INPUT.getItem())) return;
+
+                if(selectedEnchant != null){
+                    CanUpgradeEnchant status = canUpgradeLevel(p, selectedEnchant, getCurrentEnchantLevel(selectedEnchant));
+                    if(status == CanUpgradeEnchant.MAX_LEVEL || status == CanUpgradeEnchant.HAS_CONFLICTS){
+                        setSelectedEnchant(null);
+                        update();
+                        return;
+                    }
+                }else{
+                    Map<EEnchant, Integer> validated = new HashMap<>();
+                    ItemStack input = INPUT.getItem();
+                    bookEnchants.forEach((ench, level) ->{
+                        if(level > getMaxEnchantLevel(p, input, ench)) return;
+                        if(hasConflictions(input, ench)) return;
+                        validated.put(ench, level);
+                    });
+                    if(validated.isEmpty()){
+                        update();
+                        return;
+                    }
+                    bookEnchants = validated;
+                }
 
                 var requirementResult = enchantRequirements.hasRequirements(p);
                 if(requirementResult != EnchantRequirements.RequirementResult.SUCCESS) return;
@@ -286,23 +305,6 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
         return getCurrentEnchantLevel(item, enchant) < getMaxEnchantLevel(e, item, enchant);
     }
 
-    public void filterEnchantsByEnchantingCapacity(Entity e, ItemStack item, Map<EEnchant, Integer> enchants){
-        var magicCapacityHandler = CruxEnchantsOverhaul.inst().getMagicCapacityHandler();
-        Integer enchantCapacity = magicCapacityHandler.getMagicCapacity(item);
-        if(enchantCapacity == null) return;
-        EEItem eeItem = new EEItem(item);
-
-        int addedLevels = 0;
-        for(var entry : new HashSet<>(enchants.entrySet())){
-            int usage = magicCapacityHandler.getMagicUsage(entry.getKey().enchantment(), entry.getValue());
-            addedLevels += usage;
-
-            if(!eeItem.wouldExceedMagicCapacity(addedLevels)) continue;
-            enchants.remove(entry.getKey());
-            addedLevels -= usage;
-        }
-    }
-
     public Map<EEnchant, Integer> filterApplicableEnchants(Entity e, ItemStack item, Map<Enchantment, Integer> map){
         Map<EEnchant, Integer> newMap = new HashMap<>();
         map.forEach((ench, level) ->{
@@ -358,7 +360,6 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
         }
         Entity e = getViewer();
         Map<EEnchant, Integer> enchants = filterApplicableEnchants(e, input, storedEnchants);
-        filterEnchantsByEnchantingCapacity(e, input, enchants);
         if(enchants.isEmpty()){
             bookEnchants = Map.of();
             return;
@@ -380,18 +381,14 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
     }
 
     public CanUpgradeEnchant canUpgradeLevel(Entity e, ItemStack item, EEnchant enchant, int level){
-        if(CruxEntityUtil.isNonSurvival(e)) return CanUpgradeEnchant.YES;
         int maxLevel = getMaxEnchantLevel(e,item, enchant);
         if(level >= maxLevel) return CanUpgradeEnchant.MAX_LEVEL;
 
-        var handler = CruxEnchantsOverhaul.inst().getMagicCapacityHandler();
-        EEItem eeItem = new EEItem(item);
-        var difference = handler.getMagicUsage(enchant.enchantment(), level+1) - handler.getMagicUsage(enchant.enchantment(), level);
-        if(eeItem.wouldExceedMagicCapacity(difference)) return CanUpgradeEnchant.WOULD_EXCEED_ENCHANTING_CAPACITY;
+        if(hasConflictions(item, enchant)) return CanUpgradeEnchant.HAS_CONFLICTS;
+
+        if(CruxEntityUtil.isNonSurvival(e)) return CanUpgradeEnchant.YES;
 
         if(!hasEnoughPowerFor(item,enchant, level+1)) return CanUpgradeEnchant.NOT_ENOUGH_POWER;
-
-        if(hasConflictions(item, enchant)) return CanUpgradeEnchant.HAS_CONFLICTS;
 
         return CanUpgradeEnchant.YES;
     }
@@ -478,7 +475,7 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
         }
 
         if(selectedEnchant == null) return null;
-        int newLevel = getNextEnchantLevel(selectedEnchant);
+        int newLevel = Math.min(getNextEnchantLevel(selectedEnchant), getMaxEnchantLevel(selectedEnchant));
 
         ItemStack result = input.clone();
         result.addUnsafeEnchantment(selectedEnchant.enchantment(), newLevel);
@@ -496,8 +493,9 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
 
     public List<EEnchant> getAvailableEnchants(ItemStack item) {
         List<EEnchant> list = new ArrayList<>();
+        Map<Enchantment, Integer> shelfEnchants = getBlock().getSelectableEnchants();
         for (EEnchant ench : EnchantsRegistries.EENCHANT) {
-            if(!ench.isDiscoverable()) continue;
+            if(!ench.isDiscoverable() && !shelfEnchants.containsKey(ench.enchantment())) continue;
             if (!ench.canEnchantItem(item)) continue;
 
             int level = getNextEnchantLevel(item, ench);
@@ -527,7 +525,6 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
             case NOT_ENOUGH_POWER -> isVanilla ? 2 : 3;
             case MAX_LEVEL -> isVanilla ? 4 : 5;
             case HAS_CONFLICTS -> isVanilla ? 6 : 7;
-            case WOULD_EXCEED_ENCHANTING_CAPACITY -> isVanilla ? 8 : 9;
         };
     }
 
@@ -562,7 +559,6 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
                       .add(Tag.parsed("max_level", maxLevel + ""))
                       .add(Tag.parsed("level", level + ""))
                       .add(Tag.parsed("name", name))
-                      .add(Tag.parsed("eenchant_usage", enchant.enchantUsage() + ""))
                   ));
               });
         }
@@ -572,10 +568,6 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
                 /*if(enchantRequirements != null && CruxEntityUtil.isNonSurvival(getViewer())){
                     crux.insertLoreFromString(0, "<white>Power: " + block.getPower() + " / " + enchantRequirements.requiredPower);
                 }*/
-                /*todo add back in enchant usage crux.insertLoreFromString(0,
-                    "<white><latinfont:Enchant Usage>: <gold>" + (enchant.enchantUsage() * level),
-                    ""
-                );*/
                 crux.addLoreFromString(
                     ""
                 );
@@ -603,18 +595,11 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
         EEnchant enchant = entry.getKey();
         int maxLevel = getMaxEnchantLevel(enchant);
         int upgradeLevel = getUpgradeLevel(enchant, entry.getValue());
-        int level = Math.min(upgradeLevel, maxLevel);
 
         return CruxItem.wrap(enchant.getIcon())
             .customName("<!i><yellow>" + formatName(enchant, upgradeLevel))
             .editThis(crux ->{
-                if(enchants.size() == 1){
-                    //todo add back in enchant usage
-                    /*crux.insertLoreFromString(0,
-                        "<white><latinfont:Enchant Usage>: <gold>" + (enchant.enchantUsage() * level),
-                        ""
-                    );*/
-                }else{
+                if(enchants.size() != 1){
                     crux.lore(null);
                     enchants.forEach((eEnchant, eLevel) ->{
                         if(eEnchant.key().equals(enchant.key())) return;
@@ -695,9 +680,6 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
                     crux.addLoreFromString("<gray><latinfont:" + name + ">");
                 });
             }
-            case WOULD_EXCEED_ENCHANTING_CAPACITY -> {
-                crux.addLoreFromString("<red><latinfont:Would exceed enchanting capacity>");
-            }
         }
         return crux;
     }
@@ -733,15 +715,16 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
     }
 
     public int getMaxEnchantLevel(Entity e, ItemStack input, EEnchant enchant){
-        int level = enchant.maxLevel();
+        return enchantMaxLevel(enchant);
+    }
 
-        if(!INPUT.isBlank(input)){
-            CruxItem crux = CruxItem.wrap(input);
-            Integer addition = crux.getOrDefaultData(EnchantComponents.ENCHANTS_MAX_LEVEL_ADDON);
-            if(addition != null) level += addition;
+    private int enchantMaxLevel(EEnchant enchant){
+        int max = enchant.maxLevel();
+        if(!enchant.isDiscoverable()){
+            Integer shelf = getBlock().getSelectableEnchants().get(enchant.enchantment());
+            if(shelf != null) max = Math.min(max, shelf);
         }
-
-        return level;
+        return max;
     }
 
     public void setSelectedEnchant(EEnchant selectedEnchant) {
@@ -750,7 +733,8 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
             this.selectedIngredients = null;
             return;
         }
-        this.selectedIngredients = selectedEnchant.ingredientCalculator().calculateIngredients(getViewer(), getNextEnchantLevel(selectedEnchant),
+        this.selectedIngredients = selectedEnchant.ingredientCalculator().calculateIngredients(getViewer(),
+            Math.min(getNextEnchantLevel(selectedEnchant), getMaxEnchantLevel(selectedEnchant)),
             (float) selectedEnchant.quality());
     }
 
@@ -844,7 +828,7 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
                 }
             }, true);
 
-            int level = getNextEnchantLevel(selectedEnchant);
+            int level = Math.min(getNextEnchantLevel(selectedEnchant), getMaxEnchantLevel(selectedEnchant));
             List<CruxRecipeIngredient> ingredients = eEnchant.ingredientCalculator().calculateIngredients(
                 getViewer(), level, (float) selectedEnchant.quality()
             );
@@ -1226,6 +1210,5 @@ public class EnchantTableMenu extends ConfigMenu implements EnchantingMenu, Temp
         NOT_ENOUGH_POWER,
         MAX_LEVEL,
         HAS_CONFLICTS,
-        WOULD_EXCEED_ENCHANTING_CAPACITY,
     }
 }

@@ -20,7 +20,6 @@ import killercreepr.cruxenchantsoverhaul.anvil.recipe.AnvilIngredient;
 import killercreepr.cruxenchantsoverhaul.anvil.recipe.AnvilRecipe;
 import killercreepr.cruxenchantsoverhaul.api.enchant.EEnchant;
 import killercreepr.cruxenchantsoverhaul.block.CustomBlocks;
-import killercreepr.cruxenchantsoverhaul.component.EnchantComponents;
 import killercreepr.cruxenchantsoverhaul.config.CfgHook;
 import killercreepr.cruxenchantsoverhaul.config.Config;
 import killercreepr.cruxenchantsoverhaul.config.handler.FileAnvilRecipe;
@@ -28,16 +27,11 @@ import killercreepr.cruxenchantsoverhaul.config.handler.FileAnvilRepairIngredien
 import killercreepr.cruxenchantsoverhaul.config.handler.FileEEnchant;
 import killercreepr.cruxenchantsoverhaul.enchanting.EEnchanter;
 import killercreepr.cruxenchantsoverhaul.enchanting.Enchanter;
-import killercreepr.cruxenchantsoverhaul.item.CfgMagicCapacityHandler;
-import killercreepr.cruxenchantsoverhaul.item.MagicCapacityHandler;
 import killercreepr.cruxenchantsoverhaul.listener.AnvilListener;
 import killercreepr.cruxenchantsoverhaul.listener.CustomObjectiveListener;
 import killercreepr.cruxenchantsoverhaul.menu.enchanting.EnchantTableMenu;
 import killercreepr.cruxenchantsoverhaul.registries.EnchantsRegistries;
-import killercreepr.cruxenchantsoverhaul.tag.CruxEnchantsOverhaulLoreTag;
-import killercreepr.cruxenchantsoverhaul.tag.EnchDataGlobalTag;
 import killercreepr.cruxenchantsoverhaul.tag.EnchDataTag;
-import killercreepr.cruxenchantsoverhaul.tag.ItemStackTags;
 import killercreepr.cruxmenus.api.menu.holder.MenuHolder;
 import killercreepr.cruxmenus.core.menu.ConfigMenu;
 import killercreepr.cruxmenus.core.menu.holder.SimpleMenuHolder;
@@ -63,15 +57,6 @@ public class CruxEnchantsOverhaul extends CruxPlugin {
     }
 
     protected Enchanter enchanter;
-    protected MagicCapacityHandler magicCapacityHandler;
-
-    public MagicCapacityHandler getMagicCapacityHandler() {
-        return magicCapacityHandler;
-    }
-
-    public void setBlightHandler(MagicCapacityHandler magicCapacityHandler) {
-        this.magicCapacityHandler = magicCapacityHandler;
-    }
 
     public Enchanter getEnchanter() {
         return enchanter;
@@ -86,11 +71,8 @@ public class CruxEnchantsOverhaul extends CruxPlugin {
         instance = this;
         super.onLoad();
         Crux.tags().register(
-            new ItemStackTags(),
             new EnchDataTag()
         );
-        Crux.format().globalStringListResolvers().register(new EnchDataGlobalTag());
-        EnchantComponents.register();
         if(CruxRegistries.MODULES.containsKey(StandardModules.CRUX_CONFIGS)){
             CfgRegistries.SIMPLE_REGISTRY.forEach(registry ->{
                 registry.registerFileHandler(AnvilRecipe.class, new FileAnvilRecipe());
@@ -139,10 +121,6 @@ public class CruxEnchantsOverhaul extends CruxPlugin {
         }
 
         CustomBlocks.register();
-
-        Crux.tags().register(
-            new CruxEnchantsOverhaulLoreTag(() -> values.MAGIC_CAPACITY_FORMAT().value())
-        );
     }
 
     @Override
@@ -167,8 +145,7 @@ public class CruxEnchantsOverhaul extends CruxPlugin {
             throw new IllegalStateException("CruxConfigs needs to be installed");
             //values(new DefaultValues());
         }
-        setBlightHandler(new CfgMagicCapacityHandler(values));
-        setEnchanter(new EEnchanter(magicCapacityHandler));
+        setEnchanter(new EEnchanter());
 
         super.enabled();
     }

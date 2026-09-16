@@ -85,7 +85,7 @@
       "ingredients": {
         "type": "amount",
         "ingredients": [
-          "minecraft:diamond"
+          "minecraft:iron_ingot"
         ]
       },
       "quality": 1.8,
@@ -151,7 +151,7 @@
       "ingredients": {
         "type": "amount",
         "ingredients": [
-          "minecraft:turtle_scute"
+          "minecraft:pufferfish"
         ]
       },
       "quality": 2.2,
@@ -185,8 +185,7 @@
       "ingredients": {
         "type": "amount",
         "ingredients": [
-          "minecraft:feather",
-          "minecraft:phantom_membrane"
+          "minecraft:feather"
         ]
       },
       "quality": 2.5,
@@ -287,7 +286,7 @@
       "ingredients": {
         "type": "amount",
         "ingredients": [
-          "minecraft:spectral_arrow"
+          "minecraft:arrow"
         ]
       },
       "quality": 1.2,
@@ -370,7 +369,7 @@
       "ingredients": {
         "type": "amount",
         "ingredients": [
-          "minecraft:heart_of_the_sea"
+          "minecraft:nautilus_shell"
         ]
       },
       "quality": 4,
@@ -532,7 +531,7 @@
       "ingredients": {
         "type": "amount",
         "ingredients": [
-          "minecraft:echo_shard"
+          "minecraft:ender_pearl"
         ]
       },
       "quality": 7,
@@ -600,7 +599,7 @@
           {
             "type": "amount",
             "ingredients": [
-              "minecraft:heart_of_the_sea"
+              "minecraft:copper_ingot"
             ],
             "amount": "ceil(1 * <math:pow:<level>:1> * <quality>)"
           },
@@ -631,11 +630,11 @@
     {
       "enchant": "minecraft:mending",
       "description": "Restores an item's durability when the user collects experience orbs",
-      "icon": "minecraft:nether_star",
+      "icon": "minecraft:experience_bottle",
       "ingredients": {
         "type": "amount",
         "ingredients": [
-          "minecraft:nether_star"
+          "minecraft:golden_apple"
         ]
       },
       "discoverable": false,

@@ -56,11 +56,6 @@ public class SimpleEEnchant extends SimpleCruxEnchant implements EEnchant {
         return icon.build(TextParserContext.empty())
             .customName("<!i><white>" + displayName())
             .editThis(crux ->{
-                /*crux.addLoreFromString(
-                    "<white><latinfont:Enchant Usage>: <gold>" + enchantUsage(),
-                    *//*"<white><latinfont:Max Level>: <gold>" + maxLevel(),*//*
-                    ""
-                );*/
                 if(description() != null){
                     crux.addLoreFromString(CruxString.buildDescription(
                         description(), CruxString.DEFAULT_DESCRIPTION_MAX_LENGTH,

@@ -35,9 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 public class CfgHook {
     private static final FileAdvancementObjective fileAdvancementObjective = CruxAdvanceCfgData.fileAdvancementObjective();
@@ -75,12 +73,8 @@ public class CfgHook {
                         return () -> {
                             List<EnchDataTag.Data> list = new ArrayList<>();
                             for(Enchantment ench : RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT)){
-                                int value = CruxEnchantsOverhaul.inst().values().MAGIC_CAPACITY_USAGE_PER_LEVEL().valueOr(Map.of())
-                                    .getOrDefault(ench.key(), 1);
-                                if(value == 1) continue;
                                 list.add(new EnchDataTag.Data(ench.key()));
                             }
-                            list.sort(Comparator.comparing(EnchDataTag.Data::enchantUsage));
                             return list;
                         };
                     }

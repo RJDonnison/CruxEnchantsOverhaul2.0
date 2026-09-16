@@ -5,28 +5,23 @@ import killercreepr.crux.core.Crux;
 import killercreepr.cruxenchantsoverhaul.CruxEnchantsOverhaul;
 import killercreepr.cruxenchantsoverhaul.anvil.recipe.AnvilRecipe;
 import killercreepr.cruxenchantsoverhaul.anvil.recipe.AnvilRecipeResult;
-import killercreepr.cruxenchantsoverhaul.component.EnchantComponents;
 import killercreepr.cruxenchantsoverhaul.enchanting.Enchanter;
-import killercreepr.cruxenchantsoverhaul.item.MagicCapacityHandler;
 import killercreepr.cruxenchantsoverhaul.registries.EnchantsRegistries;
 import net.kyori.adventure.key.Key;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.view.AnvilView;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public class SimpleCruxedAnvil implements CruxedAnvil{
     protected ItemStack first;
     protected ItemStack second;
     protected Enchanter enchanter = CruxEnchantsOverhaul.inst().getEnchanter();
-    protected MagicCapacityHandler magicHandler = CruxEnchantsOverhaul.inst().getMagicCapacityHandler();
 
     public Enchanter getEnchanter() {
         return enchanter;
@@ -61,7 +56,7 @@ public class SimpleCruxedAnvil implements CruxedAnvil{
         if(firstType.equals(secondType)){
             return handleSameTypes();
         }
-        return new AnvilRecipeResult(null, null, null);//handleDifferentTypes();
+        return handleDifferentTypes();
     }
 
     public int calculateCost(ItemStack first, ItemStack result){
@@ -96,6 +91,7 @@ public class SimpleCruxedAnvil implements CruxedAnvil{
     private AnvilRecipeResult handleDifferentTypes(){
         ItemStack result = mergeEnchants(first, second);
         int experienceCost = calculateCost(first, result);
+        Crux.handlers().item().update(result);
         return new AnvilRecipeResult(result, experienceCost, null);
     }
 
@@ -139,103 +135,30 @@ public class SimpleCruxedAnvil implements CruxedAnvil{
         return false;
     }
 
-    public int getMagicUsage(Map<Enchantment, Integer> map){
-        int x = 0;
-        for (Map.Entry<Enchantment, Integer> entry : map.entrySet()) {
-            x += magicHandler.getMagicUsage(entry.getKey(), entry.getValue());
-        }
-        return x;
-    }
-
     public Map<Enchantment, Integer> mergeEnchants(@NotNull ItemStack item,
                                                    @NotNull Map<Enchantment, Integer> first,
                                                    @NotNull Map<Enchantment, Integer> second){
-        Integer capacity = magicHandler.getMagicCapacity(item);
-        int total = getMagicUsage(first);
-        if(capacity != null && total >= capacity) return new HashMap<>(first);
-
-        CruxItem crux = CruxItem.wrap(item);
-        Integer maxAddon = crux.getOrDefaultData(EnchantComponents.ENCHANTS_MAX_LEVEL_ADDON);
-
-        ItemMeta meta = item.getItemMeta();
+        boolean book = item.getItemMeta() instanceof EnchantmentStorageMeta;
 
         Map<Enchantment, Integer> map = new HashMap<>(first);
         for (Map.Entry<Enchantment, Integer> entry : second.entrySet()) {
             Enchantment ench = entry.getKey();
-            Integer level = entry.getValue();
-            if(!(meta instanceof EnchantmentStorageMeta) && !ench.canEnchantItem(item)) continue;
+            int level = entry.getValue();
+            if(!book && !ench.canEnchantItem(item)) continue;
 
             Integer firstLevel = first.get(ench);
             if(firstLevel == null){
-                if(conflictsWith(first.keySet(), ench) && !(meta instanceof EnchantmentStorageMeta)) continue;
-
-                if(capacity != null){
-                    while (level > 0 && magicHandler.getMagicUsage(ench, level) + total > capacity) {
-                        level--;
-                    }
-                    if (level < 1) continue;
-                    if(total + magicHandler.getMagicUsage(ench, level) > capacity) continue;
-                }
-
-                map.put(ench, level);
-                total += magicHandler.getMagicUsage(ench, level);
-                if(capacity != null && total >= capacity) break;
+                if(!book && conflictsWith(first.keySet(), ench)) continue;
+                map.put(ench, Math.min(level, ench.getMaxLevel()));
+            }else if(level == firstLevel.intValue()){
+                int newLevel = Math.min(firstLevel + 1, ench.getMaxLevel());
+                if(newLevel != firstLevel) map.put(ench, newLevel);
+            }else if(firstLevel > level){
                 continue;
+            }else{
+                map.put(ench, Math.min(level, ench.getMaxLevel()));
             }
-            if(Objects.equals(level, firstLevel)){
-                int max = ench.getMaxLevel();
-                if(maxAddon != null && max > 1) max += maxAddon;
-                int newLevel = Math.min(firstLevel + 1, max);
-                if(newLevel == firstLevel) continue;
-                if(capacity != null){
-                    int testTotal = total;
-                    testTotal -= magicHandler.getMagicUsage(ench, firstLevel);
-                    testTotal += magicHandler.getMagicUsage(ench, newLevel);
-
-                    if(testTotal > capacity) continue;
-                }
-
-                map.put(ench, newLevel);
-                total -= magicHandler.getMagicUsage(ench, firstLevel);
-                total += magicHandler.getMagicUsage(ench, newLevel);
-                if(capacity != null && total >= capacity) break;
-                continue;
-            }
-            if(firstLevel > level) continue;
-
-            if(capacity != null){
-                while (level >= firstLevel && magicHandler.getMagicUsage(ench, level) + total > capacity) {
-                    level--;
-                }
-                if (level <= firstLevel) continue;
-
-                int testTotal = total;
-                testTotal -= magicHandler.getMagicUsage(ench, firstLevel);
-                testTotal += magicHandler.getMagicUsage(ench, level);
-
-                if(testTotal > capacity) continue;
-            }
-
-            map.put(ench, level);
-            total -= magicHandler.getMagicUsage(ench, firstLevel);
-            total += magicHandler.getMagicUsage(ench, level);
-            if(capacity != null && total >= capacity) break;
         }
-        /*second.forEach((ench, level) ->{
-            if(!(item.getItemMeta() instanceof EnchantmentStorageMeta) && !ench.canEnchantItem(item)) return;
-            Integer firstLevel = first.get(ench);
-            if(firstLevel == null){
-                if(conflictsWith(first.keySet(), ench) && !(item.getItemMeta() instanceof EnchantmentStorageMeta)) return;
-                map.put(ench, level);
-                return;
-            }
-            if(Objects.equals(level, firstLevel)){
-                map.put(ench, Math.min(firstLevel + 1, ench.getMaxLevel()));
-                return;
-            }
-            if(firstLevel > level) return;
-            map.put(ench, level);
-        });*/
         return map;
     }
 

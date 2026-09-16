@@ -1,0 +1,15 @@
+# Gradle
+.gradle/
+build/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# run-paper dev server output (world, logs, eula, caches)
+run/
+
+# Logs / OS noise
+*.log
+.DS_Store
